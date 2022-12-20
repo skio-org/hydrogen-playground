@@ -12,8 +12,9 @@ import {Heading, IconRemove, Text} from '~/components';
 
 export function CartLineItem() {
   const {linesRemove} = useCart();
-  const {id: lineId, quantity, merchandise} = useCartLine();
+  const {id: lineId, quantity, merchandise, sellingPlanAllocation} = useCartLine();
 
+  console.log(sellingPlanAllocation)
   return (
     <li key={lineId} className="flex gap-4">
       <div className="flex-shrink">
@@ -38,12 +39,20 @@ export function CartLineItem() {
             </Link>
           </Heading>
 
-          <div className="grid pb-2">
+          <div className="grid">
             {(merchandise?.selectedOptions || []).map((option) => (
               <Text color="subtle" key={option.name}>
                 {option.name}: {option.value}
               </Text>
             ))}
+          </div>
+
+          <div className="grid pb-2">
+            { sellingPlanAllocation && (
+              <Text color="subtle">
+                {sellingPlanAllocation.sellingPlan.name}
+              </Text>
+            )}
           </div>
 
           <div className="flex items-center gap-2">

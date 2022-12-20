@@ -96,7 +96,7 @@ export default function Product() {
                     <Text className={'opacity-50 font-medium'}>{vendor}</Text>
                   )}
                 </div>
-                <ProductForm />
+                <ProductForm product={product} />
                 <div className="grid gap-4 py-4">
                   {descriptionHtml && (
                     <ProductDetail
@@ -149,6 +149,34 @@ const PRODUCT_QUERY = gql`
         }
       }
       productType
+      requiresSellingPlan
+      sellingPlanGroups(first: 10) {
+        edges {
+          node {
+            name
+            options {
+              name
+              values
+            }
+            sellingPlans(first: 10) {
+              edges {
+                node {
+                  id
+                  name
+                  description
+                  recurringDeliveries
+                  options {
+                    name
+                    value
+                  }
+                }
+              }
+            }
+            appName
+          }
+        }
+      }
+
       variants(first: 100) {
         nodes {
           id
@@ -177,6 +205,39 @@ const PRODUCT_QUERY = gql`
           unitPrice {
             amount
             currencyCode
+          }
+
+          sellingPlanAllocations(first: 10) {
+            edges {
+              node {
+                sellingPlan {
+                  id
+                  name
+                  options {
+                    name
+                    value
+                  }
+                }
+                priceAdjustments {
+                  price {
+                    amount
+                    currencyCode
+                  }
+                  compareAtPrice {
+                    amount
+                    currencyCode
+                  }
+                  perDeliveryPrice {
+                    amount
+                    currencyCode
+                  }
+                  unitPrice {
+                    amount
+                    currencyCode
+                  }
+                }
+              }
+            }
           }
         }
       }

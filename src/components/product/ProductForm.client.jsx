@@ -11,12 +11,20 @@ import {
 
 import {Heading, Text, Button, ProductOptions} from '~/components';
 
-export function ProductForm() {
+import loadable from '@loadable/component';
+const SkioPlanPicker = loadable(() => import('~/components/skio/SkioPlanPicker.client'), { 
+  ssr: false,
+  fallback: <div>Loading...</div>,
+});
+
+export function ProductForm({ product }) {
   const {pathname, search} = useUrl();
   const [params, setParams] = useState(new URLSearchParams(search));
 
   const {options, setSelectedOption, selectedOptions, selectedVariant} =
     useProductOptions();
+
+  const [subscription, setSubscription] = useState(null);
 
   const isOutOfStock = !selectedVariant?.availableForSale || false;
   const isOnSale =
@@ -70,8 +78,15 @@ export function ProductForm() {
     [setSelectedOption, params, pathname],
   );
 
+  // Returns { sellingPlan, priceV2, discount } or null
+  const onPlanChange = async(subscription) => {
+    setSubscription(subscription);
+  }
+
   return (
     <form className="grid gap-10">
+      <SkioPlanPicker product={ product } selectedVariant={ selectedVariant } onPlanChange={ onPlanChange }></SkioPlanPicker>
+
       {
         <div className="grid gap-4">
           {options.map(({name, values}) => {
@@ -101,6 +116,7 @@ export function ProductForm() {
       <div className="grid items-stretch gap-4">
         <AddToCartButton
           variantId={selectedVariant?.id}
+          sellingPlanId={subscription?.sellingPlan?.id}
           quantity={1}
           accessibleAddingToCartLabel="Adding item to your cart"
           disabled={isOutOfStock}
@@ -118,16 +134,23 @@ export function ProductForm() {
                 as="span"
                 className="flex items-center justify-center gap-2"
               >
-                <span>Add to bag</span> <span>·</span>{' '}
+                <span>{ subscription ? 'Subscription' : 'Add to bag' }</span> <span>·</span>{' '}
                 <Money
                   withoutTrailingZeros
-                  data={selectedVariant.priceV2}
+                  data={subscription ? subscription.pricev2 : selectedVariant.priceV2}
                   as="span"
                 />
-                {isOnSale && (
+                {isOnSale ? (
                   <Money
                     withoutTrailingZeros
                     data={selectedVariant.compareAtPriceV2}
+                    as="span"
+                    className="opacity-50 strike"
+                  />
+                ): (subscription && subscription.pricev2.amount < selectedVariant.priceV2.amount) && (
+                  <Money
+                    withoutTrailingZeros
+                    data={selectedVariant.priceV2}
                     as="span"
                     className="opacity-50 strike"
                   />

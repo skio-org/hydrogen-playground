@@ -36,9 +36,12 @@
   "prettier": "@shopify/prettier-config",
   "dependencies": {
     "@headlessui/react": "^1.7.0",
+    "@lit-labs/react": "^1.1.1",
+    "@loadable/component": "^5.15.2",
     "@shopify/hydrogen": "^1.6.5",
     "clsx": "^1.1.1",
     "graphql-tag": "^2.12.6",
+    "lit": "^2.5.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-use": "^17.4.0",
