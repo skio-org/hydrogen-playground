@@ -1,4 +1,4 @@
-import {useRef, Suspense, useMemo} from 'react';
+import {useRef, Suspense, useMemo, useState} from 'react';
 import {Disclosure, Listbox} from '@headlessui/react';
 import {defer} from '@shopify/remix-oxygen';
 import {
@@ -22,14 +22,21 @@ import {
   Text,
   Link,
   AddToCartButton,
-  Button,
+  Button
 } from '~/components';
+
 import {getExcerpt} from '~/lib/utils';
 import {seoPayload} from '~/lib/seo.server';
 import invariant from 'tiny-invariant';
 import clsx from 'clsx';
 import {MEDIA_FRAGMENT, PRODUCT_CARD_FRAGMENT} from '~/data/fragments';
 import {routeHeaders, CACHE_SHORT} from '~/data/cache';
+
+import loadable from '@loadable/component';
+const SkioPlanPicker = loadable(() => import('~/components/SkioPlanPicker'), { 
+  ssr: false,
+  fallback: <div>Loading...</div>,
+});
 
 export const headers = routeHeaders;
 
@@ -217,6 +224,12 @@ export function ProductForm() {
     quantity: 1,
   };
 
+  const [subscription, setSubscription] = useState(null);
+
+  const onPlanChange = async(subscription) => {
+    setSubscription(subscription);
+  }
+
   return (
     <div className="grid gap-10">
       <div className="grid gap-4">
@@ -224,6 +237,9 @@ export function ProductForm() {
           options={product.options}
           searchParamsWithDefaults={searchParamsWithDefaults}
         />
+        {selectedVariant && (
+          <SkioPlanPicker product={product} selectedVariant={selectedVariant} onPlanChange={ onPlanChange }></SkioPlanPicker>
+        )}
         {selectedVariant && (
           <div className="grid items-stretch gap-4">
             {isOutOfStock ? (
@@ -235,6 +251,7 @@ export function ProductForm() {
                 lines={[
                   {
                     merchandiseId: selectedVariant.id,
+                    ...(subscription?.sellingPlan && { sellingPlanId: subscription?.sellingPlan?.id }),
                     quantity: 1,
                   },
                 ]}
@@ -249,16 +266,23 @@ export function ProductForm() {
                   as="span"
                   className="flex items-center justify-center gap-2"
                 >
-                  <span>Add to Bag</span> <span>·</span>{' '}
+                  <span>{ subscription ? 'Subscribe' : 'Add to bag' }</span> <span>·</span>{' '}
                   <Money
                     withoutTrailingZeros
-                    data={selectedVariant?.price}
+                    data={subscription ? subscription.price : selectedVariant.price}
                     as="span"
                   />
-                  {isOnSale && (
+                  {isOnSale ? (
                     <Money
                       withoutTrailingZeros
                       data={selectedVariant?.compareAtPrice}
+                      as="span"
+                      className="opacity-50 strike"
+                    />
+                  ): (subscription && subscription.price.amount < selectedVariant.price.amount) && (
+                    <Money
+                      withoutTrailingZeros
+                      data={selectedVariant.price}
                       as="span"
                       className="opacity-50 strike"
                     />
@@ -497,6 +521,38 @@ const PRODUCT_VARIANT_FRAGMENT = `#graphql
       title
       handle
     }
+    sellingPlanAllocations(first: 10) {
+      edges {
+        node {
+          sellingPlan {
+            id
+            name
+            options {
+              name
+              value
+            }
+          }
+          priceAdjustments {
+            price {
+              amount
+              currencyCode
+            }
+            compareAtPrice {
+              amount
+              currencyCode
+            }
+            perDeliveryPrice {
+              amount
+              currencyCode
+            }
+            unitPrice {
+              amount
+              currencyCode
+            }
+          }
+        }
+      }
+    }
   }
 `;
 
@@ -519,6 +575,33 @@ const PRODUCT_QUERY = `#graphql
       options {
         name
         values
+      }
+      requiresSellingPlan
+      sellingPlanGroups(first: 10) {
+        edges {
+          node {
+            name
+            options {
+              name
+              values
+            }
+            sellingPlans(first: 10) {
+              edges {
+                node {
+                  id
+                  name
+                  description
+                  recurringDeliveries
+                  options {
+                    name
+                    value
+                  }
+                }
+              }
+            }
+            appName
+          }
+        }
       }
       selectedVariant: variantBySelectedOptions(selectedOptions: $selectedOptions) {
         ...ProductVariantFragment

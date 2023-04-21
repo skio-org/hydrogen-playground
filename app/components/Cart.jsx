@@ -184,7 +184,7 @@ function CartSummary({cost, layout, children = null}) {
 function CartLineItem({line}) {
   if (!line?.id) return null;
 
-  const {id, quantity, merchandise} = line;
+  const {id, quantity, merchandise, sellingPlanAllocation} = line;
 
   if (typeof quantity === 'undefined' || !merchandise?.product) return null;
 
@@ -214,12 +214,20 @@ function CartLineItem({line}) {
             )}
           </Heading>
 
-          <div className="grid pb-2">
+          <div className="grid">
             {(merchandise?.selectedOptions || []).map((option) => (
               <Text color="subtle" key={option.name}>
                 {option.name}: {option.value}
               </Text>
             ))}
+          </div>
+
+          <div className="grid pb-2">
+            { sellingPlanAllocation && (
+              <Text color="subtle">
+                {sellingPlanAllocation.sellingPlan.name}
+              </Text>
+            )}
           </div>
 
           <div className="flex items-center gap-2">

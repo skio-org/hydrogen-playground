@@ -275,6 +275,16 @@ const CART_QUERY = `#graphql
               currencyCode
             }
           }
+          sellingPlanAllocation {
+            sellingPlan {
+              id
+              name
+              options {
+                name
+                value
+              }
+            }
+          }
           merchandise {
             ... on ProductVariant {
               id
